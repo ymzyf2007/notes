@@ -4,7 +4,8 @@
 
 ​		通常当我们设计一个单例类的时候，会在类的内部构造这个类（通过构造函数，或者在定义处直接创建），并对外提供一个static getInstance方法提供获取单例对象的途径。例如：
 
-```public class Singleton     
+```java
+public class Singleton  
 {     
     private static Singleton instance = new Singleton();     
     private Singleton() {     
@@ -20,8 +21,9 @@
 
 ​		为了避免这种情况，我们通常使用惰性加载机制，也就是在使用的时候才去创建。惰性加载代码如下：
 
-```public class Singleton {     
-    private static Singleton instance = null;     
+```java 
+public class Singleton {        
+	private static Singleton instance = null;     
     private Singleton() {     
         …     
     }     
@@ -51,7 +53,8 @@
 
 ​		所以我们可以使用Class锁机制给getInstance方法加上一个synchronized关键字，这样每次只允许一个线程调getInstance方法：
 
-```public static synchronized Singleton getInstance() {     
+```   java
+public static synchronized Singleton getInstance() {  
     if(instance == null)     
         instance = new Singleton();       
     return instance;       
@@ -62,7 +65,8 @@
 
 ​		曾经有人为了解决以上问题，提出了double-checked的方案
 
-```public static Singleton getInstance() {     
+```   java
+public static Singleton getInstance() {  
     if(instance == null)     
         synchronized(Singleton.class) {     
             if(instance == null)     

@@ -10,8 +10,9 @@
 
 存储时：
 
-```public V put(K key, V value) {
-     if (key == null)
+```
+public V put(K key, V value) {
+    if (key == null)
           return putForNullKey(value);
      int hash = hash(key);
      int i = indexFor(hash, table.length);
@@ -27,12 +28,13 @@
      modCount++;
      addEntry(hash, key, value, i);
      return null;
-}
+ }
 ```
 
 （1）、当调用put(key, value)时，首先获取key的hashcode，再把hachcode通过以下散列运算得到一个int h。
 
-```h ^= (h >>> 20) ^ (h >>> 12);
+```
+h ^= (h >>> 20) ^ (h >>> 12);
 return h ^ (h >>> 7) ^ (h >>> 4);
 ```
 
@@ -46,7 +48,8 @@ return h ^ (h >>> 7) ^ (h >>> 4);
 
 取值时：
 
-```public V get(Object key) {
+```java
+public V get(Object key) {    
      if (key == null)
           return getForNullKey();
      Entry<K,V> entry = getEntry(key);
@@ -54,7 +57,8 @@ return h ^ (h >>> 7) ^ (h >>> 4);
 }
 ```
 
-```final Entry<K,V> getEntry(Object key) {
+```
+final Entry<K,V> getEntry(Object key) {
      if (size == 0) {
           return null;
      }
