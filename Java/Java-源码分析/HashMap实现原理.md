@@ -10,7 +10,7 @@
 
 存储时：
 
-`public V put(K key, V value) {
+``public V put(K key, V value) {
      if (key == null)
           return putForNullKey(value);
      int hash = hash(key);
@@ -27,12 +27,12 @@
      modCount++;
      addEntry(hash, key, value, i);
      return null;
-}`
+}``
 
 （1）、当调用put(key, value)时，首先获取key的hashcode，再把hachcode通过以下散列运算得到一个int h。
 
-`h ^= (h >>> 20) ^ (h >>> 12);
-return h ^ (h >>> 7) ^ (h >>> 4);`
+``h ^= (h >>> 20) ^ (h >>> 12);
+return h ^ (h >>> 7) ^ (h >>> 4);``
 
 ​		为什么要经过这样的运算呢？这就是HashMap的高明之处。先看个例子，一个十进制数32768(二进制1000 0000 0000 0000)，经过上述公式运算之后的结果是35080(二进制1000 1001 0000 1000)。看出来了吗？或许这样还看不出什么，再举个数字61440(二进制1111 0000 0000 0000)，运算结果是65263(二进制1111 1110 1110 1111)，现在应该很明显了，它的目的是让“1”变的均匀一点，散列的本意就是要尽量均匀分布。那这样有什么意义呢？请看下一步。
 
@@ -44,14 +44,14 @@ return h ^ (h >>> 7) ^ (h >>> 4);`
 
 取值时：
 
-`public V get(Object key) {
+``public V get(Object key) {
      if (key == null)
           return getForNullKey();
      Entry<K,V> entry = getEntry(key);
      return null == entry ? null : entry.getValue();
-}`
+}``
 
-`final Entry<K,V> getEntry(Object key) {
+``final Entry<K,V> getEntry(Object key) {
      if (size == 0) {
           return null;
      }
@@ -62,7 +62,7 @@ return h ^ (h >>> 7) ^ (h >>> 4);`
                return e;
      }
      return null;
-}`
+}``
 
 **扩展问题**
 
