@@ -104,6 +104,76 @@ GC算法：
      HashMap中的put(k, v)是这样实现的，首先是获取key的哈希值（hashcode），再把hashcode通过一个散列运算得到一个int类型的h值。得到这个int类型的值之后，然后拿这个值与HashMap的承载量（HashMap的默认承载量length是16，可以自动变长）进行逻辑与运算，这样得到一个比HashMap的长度小的正数。这样得到就是要存储的在数组中存储的位置。先判断该位置上有没有元素，没有的话就创建一个Entry对象，在这个位置上插入，这样插入结束；如果有的话，通过对链表的遍历，判断是否已经存在key（判断hashcode和equals），有的话用新的value值代替老的value值；如果没有，则在该位置插入Entry对象，把原来该位置的Entry赋值给新的Entry的next节点，这样插入结束。
      HashMap的问题是线程安全问题，它不是线程安全的，它是非一致性哈希的实现。resize会导致映射关系的重大变化。
 
+##### 10.ConcurrentHashMap的get()，put()，又是如何实现的？ConcurrentHashMap有哪些问题？ ConcurrentHashMap的锁是读锁还是写锁？
+
+答：ConcurrentHashMap是允许多个修改操作并发进行，只要这些修改操作在不同的段上。ConcurrentHashMap使用了锁分离技术。ConcurrentHashMap完全允许多个读操作并发进行，读操作并不需要加锁。为了确保读操作能够看到最新的值，将value设置成volatile，这避免了加锁。
+
+ConcurrentHashMap的get操作是直接委托给段（Segment）的get方法的，get操作是不需要加锁的。
+
+ConcurrentHashMap的put操作是直接委托给段（Segment）的put方法的，put方法是段加锁。
+
+ConcurrentHashMap的是写锁。
+
+ConcurrentHashMap的问题：如果你只调用get()，或只调用put()时，ConcurrentHashMap是线程安全的。但是在一个方法里面你调用完get()之后，调用put之前，有另一个线程调用了put，你再去执行put，这样就可能把前面的操作结果覆盖掉了。所以，即使在线程安全的情况下， 还是违反了原子操作。
+
+##### 11.HashMap与HashTable的区别
+
+答：
+
+1）、继承不同，HashMap是继承AbstractMap，而Hashtable是继承Dictionary。
+
+2）、Hashtable中的方法是同步的，即是线程安全的，而HashMap是线程不全的。
+
+3）、Hashtable中，key和value都不允许出现null值。而HashMap中，null可以作为键，这样的键这有一个；可以有一个或多个键所对应的值null。
+
+4）、哈希值的使用不用，Hashtable直接使用对象的hashCode，而HashMap获取hashCode后重新根据散列运算得到位置值。
+
+5）、Hashtable和HashMap它们两个内部实现方式的数组的初始化大小和扩容方式不一样。
+
+##### 12.HashSet实现原理
+
+答：HashSet实现Set接口，由哈希表支持。它不保证set的迭代顺序：特别是它不保证该顺序恒久不变。
+
+​		此类允许用null元素。HashSet中不允许有重复元素，这是因为HashSet是根据HashMap实现的，HashSet中的元素都存放在HashMap的key上面，而value中的值都是统一的一个private static final Object PRESENT = new Object(); HashSet跟HashMap一样，都是一个存放链表的数组。
+
+##### 13.判断两个对象是否相等，为什么必须同时重写equals()和hashcode()方法
+
+答：hashcode顾名思义是一个散列值码。散列值，并不能表现其唯一性，但是具有离散性，其意义在于类似进行hashMap等操作时，加快对象比较的速度，进而加快对象搜索的速度。
+
+​		hashcode和equals的关系
+
+​		两个对象equals的时候，hashcode必须相等，但hashcode相等时，对象不一定equals。
+
+​		在java中，equals和hashcode是有设计要求的，equals相等，则hashcode一定相等，反之则不然。
+
+ 		为什么会有这样的要求呢？
+
+​		在集合中，比如HashSet中，要求放入的对象不能重复，怎么判定呢？
+
+​		首先会调用hashcode，如果hashcode相等，则继续调用equals，如果equals也相等，则认为重复。
+
+​		如果只重写了equals方法而没有重写hashcode方法，则hashcode就是继承Object的，返回内存编码，这时候可能出现equals相等，但是hashcode不等的情况。你的对象 使用集合时就会得不到你想要的结果。
+
+​		最后明白两点就行了：
+
+1）、hashCode()方法存在的主要目的就是提高效率。
+
+2）、在集合中判断两个对象相等的条件，其实无论是往集合中存储数据，还是从集合中取数据，包括控制唯一性等，都是用这个条件判断的，条件如下：
+
+​		首先判断两个对象的hashcode是否相等，如果不相等，就认为这两个对象不相等，就完成了。如果相等，才会判断两个对象的equals()方法是否相等，如果不相等，就认为两个对象不相等，如果相等，那就认为这两个对象相等。
+
+##### 14.什么是一致性哈希？用来解决什么问题？
+
+答：一致性哈希是在哈希算法的基础上，提出的在动态变化的分布式环境中，一致性哈希要满足几个条件，平衡性、单调性和分散性。（提供一个hashtable，它能使节点加入或离去的时候，不会导致哈希映射重大改变）
+
+​		平衡性是指 hash的结果应该平均分配到各个节点, 这样从算法上就解决了负载均衡问题。
+
+​		单调性是指在新增或者删减节点时, 同一个key访问到的值总是一样的。
+
+​		分散性是指数据应该分散的存放在分布式集群中的各个节点(节点自己可以有备份)，不必要每个节点都存储所有的数据。
+
+​		用来解决分布式数据存储系统，负载均衡。（memcached的客户端，使用了一致性hash算法ketama进行数据存储节点的选择）。
+
 
 
 
