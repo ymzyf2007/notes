@@ -35,3 +35,9 @@ WHERE guide_order_tracking.order_no=guide_order_sendinfo.order_no and guide_orde
 ('6323404357914963968');
 ```
 
+3.MySql分页语句
+
+```mysql
+select * from table limit 5,10;  // 检索记录行 6-15
+```
+
