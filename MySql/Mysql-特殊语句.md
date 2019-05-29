@@ -41,3 +41,17 @@ WHERE guide_order_tracking.order_no=guide_order_sendinfo.order_no and guide_orde
 select * from table limit 5,10;  // 检索记录行 6-15
 ```
 
+4.MySql5添加外键约束错误解决方法
+
+​		当添加MySQL表之间外键约束关系的时候，常常会发生这样的错误：Error Code : 1005
+
+​		问题还是不能得到解决，经过一番探索，终于找到了问题所在，当发生此类的错误的时候，从三个角度入手：
+
+1）、确保主表有主键
+
+2）、确保主从表数据引擎为InnoDB类型
+
+3）、确定从表外键字段类型与主表一致。(尤其检查下Integer有无符号是否一致)
+
+ps：MyISAM是不支持外键的。
+
