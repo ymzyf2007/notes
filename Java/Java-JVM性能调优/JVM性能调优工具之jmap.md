@@ -202,7 +202,81 @@ PS Old Generation
   36:          4940         118560  org.apache.skywalking.apm.dependencies.io.grpc.internal.LogId
 ~~~
 
+###### 示例四：-clstats
 
+命令：jmap -clstats pid
+
+描述：打印类加载器信息
+
+​		-clstats是-permstat的替代方案，在JDK8之前，-permstat用来打印类加载器的数据，打印Java堆内存的永久保存区域的类加载器的智能统计信息。对于每个类加载器而言，它的名称、活跃度、地址、父类加载器、它所加载的类的数量和大小都会被打印。此外，包含的字符串数量和大小也会被打印。
+
+~~~java
+[ls@59-37-131-27 order]$ jmap -clstats 24794
+Attaching to process ID 24794, please wait...
+Debugger attached successfully.
+Server compiler detected.
+JVM version is 25.121-b13
+finding class loader instances ..done.
+computing per loader stat ..done.
+please wait.. computing liveness.liveness analysis may be inaccurate ...
+class_loader    classes bytes   parent_loader   alive?  type
+
+<bootstrap>     2371    4208558   null          live    <internal>
+0x00000000e148c948      1       1473    0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e0ff3af8      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e148bf40      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e148f540      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e0ff1af0      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e0ff4cf0      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e148d758      1       1473    0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e148e958      1       880       null          dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e148f158      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e0373820      1       880       null          dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e0ff2ce8      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e148a150      1       1471    0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e148c350      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e01ee400      8       15673     null          dead    sun/misc/Launcher$ExtClassLoader@0x000000010000fa48
+0x00000000e0ff3ee0      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e1489d68      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+0x00000000e0ff1ed8      1       880     0x00000000e0020628      dead    sun/reflect/DelegatingClassLoader@0x0000000100009df8
+~~~
+
+###### 示例五：-finalizerinfo
+
+命令：jmap -finalizerinfo pid
+
+描述：打印等待终结的对象信息
+
+~~~java
+[ls@59-37-131-27 order]$ jmap -finalizerinfo 24794
+Attaching to process ID 24794, please wait...
+Debugger attached successfully.
+Server compiler detected.
+JVM version is 25.121-b13
+Number of objects pending for finalization: 0
+~~~
+
+Number of objects pending for finalization: 0 说明当前F-QUEUE队列中并没有等待Fializer线程执行final
+
+###### 示例六：-dump:<dump-options>
+
+命令：jmap -dump:format=b,file=filename.hprof pid
+
+描述：生成堆快照dump文件
+
+​		以hprof二进制格式转储Java堆到指定filename的文件中。live子选项是可选的。如果指定了live子选项，堆中只有活动的对象会被转储。想要浏览heap dump，你可以使用jhat(Java堆分析工具)读取生成的文件。
+
+> 这个命令执行，JVM会将整个heap的信息dump写入到一个文件，heap如果比较大的话，就会导致这个过程比较耗时，并且执行的过程中为了保证dump的信息是可靠的，所以会暂停应用， 线上系统慎用。
+
+~~~java
+[ls@59-37-131-27 order]$ jmap -dump:format=b,file=20190718-order.hprof 24794
+Dumping heap to /home/ls/service/order/20190718-order.hprof ...
+Heap dump file created
+[ls@59-37-131-27 order]$ ll
+总用量 1155580
+-rw-rw-r--. 1 ls ls      1380 7月  17 10:46 1.txt
+-rw-------. 1 ls ls 369093811 7月  18 01:14 20190718-order.hprof
+~~~
 
 
 
