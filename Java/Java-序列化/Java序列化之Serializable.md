@@ -196,3 +196,144 @@ public class User implements Serializable {
 
 **readObject和writeObject**
 
+~~~java
+private void readObject(ObjectInputStream s) throws Exception {
+		s.defaultReadObject();
+		this.password = crypto((String) s.readObject());
+	}
+	
+	private void writeObject(ObjectOutputStream s) throws Exception {
+		s.defaultWriteObject();
+		s.writeObject(crypto(this.password));
+	}
+	
+	/**
+     * 简单加密加密解密字符串 加密解密思路：先将字符串变成byte数组，再将数组每位与key做位运算，得到新的数组就是加密或解密后的byte数组.
+     * 知识：^ 是java位运算，可以百度了解下，a = b ^ skey 反之也成立，即b = a ^ skey
+     * 
+     * @param str 解密/加密 字符串
+     * @return
+     * @throws Exception
+     */
+    private String crypto(String str) {
+        try {
+            byte skey = (byte) 88; //密钥
+            byte[] bytes = str.getBytes("GBK");
+
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = (byte) (bytes[i] ^ skey);
+            }
+            return new String(bytes, "GBK");
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+~~~
+
+​		我们只需要在当前User类中添加readObject()和writeObject()方法，在writeObject方法中实现对password字段的加密，在readObject方法中实现对password字段的解密，并赋值给User对象即可。
+
+> writeObject()和readObject()可以实现对transient和非transient字段进行序列化和反序列化。
+
+###### ArrayList序列化源码分析
+
+​		我们知道，ArrayList是通过数组进行存储数据的，当数组中元素达到数组的最大容量时，会自动生成一个更大的数组，并复制到更大的数组中。
+
+~~~java
+public class ArrayList<E> extends AbstractList<E>
+        implements List<E>, RandomAccess, Cloneable, java.io.Serializable
+{
+    private static final long serialVersionUID = 8683452581122892189L;
+
+    /**
+     * Default initial capacity.
+     */
+    private static final int DEFAULT_CAPACITY = 10;
+
+    /**
+     * Shared empty array instance used for empty instances.
+     */
+    private static final Object[] EMPTY_ELEMENTDATA = {};
+
+    /**
+     * Shared empty array instance used for default sized empty instances. We
+     * distinguish this from EMPTY_ELEMENTDATA to know how much to inflate when
+     * first element is added.
+     */
+    private static final Object[] DEFAULTCAPACITY_EMPTY_ELEMENTDATA = {};
+
+    /**
+     * The array buffer into which the elements of the ArrayList are stored.
+     * The capacity of the ArrayList is the length of this array buffer. Any
+     * empty ArrayList with elementData == DEFAULTCAPACITY_EMPTY_ELEMENTDATA
+     * will be expanded to DEFAULT_CAPACITY when the first element is added.
+     */
+    transient Object[] elementData; // non-private to simplify nested class access
+
+    /**
+     * The size of the ArrayList (the number of elements it contains).
+     *
+     * @serial
+     */
+    private int size;
+    ......
+}
+~~~
+
+​		打开ArrayList源码，我们可以知道，数据是存储在Object[] elementData数组中。该属性是transient关键字修饰的，通过上面代码可以知道，用transient关键字修饰的字段，默认是不能被序列化的。ArrayList如果要实现序列化，那么就必须通过writeObject()和readObject()方法来实现序列化和反序列化，那么他这是多此一举吗？
+
+###### writeObject()方法
+
+~~~java
+private void writeObject(java.io.ObjectOutputStream s)
+    throws java.io.IOException{
+    // Write out element count, and any hidden stuff
+    int expectedModCount = modCount;
+    s.defaultWriteObject();
+
+    // Write out size as capacity for behavioural compatibility with clone()
+    s.writeInt(size);
+
+    // Write out all elements in the proper order.
+    for (int i=0; i<size; i++) {
+        s.writeObject(elementData[i]);
+    }
+
+    if (modCount != expectedModCount) {
+        throw new ConcurrentModificationException();
+    }
+}
+~~~
+
+​		通过源码，我们可以看到，ArrayList序列化数组元素时做了优化（注意size）。
+
+​		因为ArrayList的elementData数组大小，不是ArrayList的实际容量，这里只把实际存储在elementData中的数据，进行序列化。这样就减少了序列化的流大小。
+
+~~~java
+private void readObject(java.io.ObjectInputStream s)
+        throws java.io.IOException, ClassNotFoundException {
+    elementData = EMPTY_ELEMENTDATA;
+
+    // Read in size, and any hidden stuff
+    s.defaultReadObject();
+
+    // Read in capacity
+    s.readInt(); // ignored
+
+    if (size > 0) {
+        // be like clone(), allocate array based upon size not capacity
+        int capacity = calculateCapacity(elementData, size);
+        SharedSecrets.getJavaOISAccess().checkArray(s, Object[].class, capacity);
+        ensureCapacityInternal(size);
+
+        Object[] a = elementData;
+        // Read in all elements in the proper order.
+        for (int i=0; i<size; i++) {
+            a[i] = s.readObject();
+        }
+    }
+}
+~~~
+
+
+
