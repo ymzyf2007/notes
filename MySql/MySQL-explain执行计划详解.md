@@ -106,3 +106,48 @@ mysql对数据使用一个外部的索引排序，而不是按照表内的索引
 
 ![](/Extra-using_temporary.jpg)
 
+3、**Using index**：
+
+表示相应的select操作中使用了**覆盖索引**（Covering Index），避免了访问表的数据行，效率高，如果同时出现Using where，表明索引被用来执行索引健值的查找。如果没有同时出现Using where，表明索引用来读取数据而非执行查找动作
+
+![](/Extra-using_index.jpg)
+
+**覆盖索引**（Covering Index）：也叫索引覆盖。就是select列表中的字段，只用从索引中就能获取，不必根据索引再次读取数据文件，换句话说查询列要被所建的索引覆盖。
+
+注意：
+
+a、如果使用覆盖索引，select列表中的字段只取出需要的列，不要使用select *
+
+b、如果将所有字段都建索引会导致索引文件过大，反而降低crud性能
+
+4、**Using where**：
+
+使用了where过滤
+
+5、**Using join buffer**
+
+使用了链接缓存
+
+6、**Impossible WHERE**
+
+where子句的值总是false，不能用来获取任何元素
+
+![](/Extra-Impossible_where.jpg)
+
+****
+
+**综合Case**
+
+![](/case.jpg)
+
+执行顺序
+
+1（id = 4）、【select id, name from t2】：select_type 为union，说明id=4的select是union里面的第二个select。
+
+2（id = 3）、【select id, name from t1 where address = ‘11’】：因为是在from语句中包含的子查询所以被标记为DERIVED（衍生），where address = ‘11’ 通过复合索引idx_name_email_address就能检索到，所以type为index。
+
+3（id = 2）、【select id from t3】：因为是在select中包含的子查询所以被标记为SUBQUERY。
+
+4（id = 1）、【select d1.name, … d2 from … d1】：select_type为PRIMARY表示该查询为最外层查询，table列被标记为 “derived3”表示查询结果来自于一个衍生表（id = 3 的select结果）。
+
+5（id = NULL）、【 … union … 】：代表从union的临时表中读取行的阶段，table列的 “union 1, 4”表示用id=1 和 id=4 的select结果进行union操作。
