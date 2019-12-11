@@ -94,11 +94,84 @@ explain select * from staffs where name='zhangsan' and age>30 and pos='manager';
 
 ![](/范围之后全失效.jpg)
 
-**5、LIKE百分写最右（索引字段使用like以通配符['%字符串']开头时，会导致索引失效而转向全表扫描）**
+**5、LIKE百分写最右，索引覆盖不写星（索引字段使用like以通配符['%字符串']开头时，会导致索引失效而转向全表扫描）**
 
 ~~~mysql
 explain select * from staffs where name like '%zhangsan';
 ~~~
 
 ![](/LIKE百分写最右.jpg)
+
+注：like百分写在最左边，索引失效导致全表扫描。
+
+~~~mysql
+explain select * from staffs where name like 'zhangsan%';
+~~~
+
+![](/LIKE百分写最右情况-走索引.jpg)
+
+**问题：解决like ‘%字符串%’时，索引失效问题的方法？ 答案：使用索引覆盖可以解决**
+
+~~~mysql
+explain select id,name,age from staffs where name like '%zhangsan%';
+~~~
+
+![](/索引覆盖不写星.jpg)
+
+**6、空值不等还有or，索引失效要少用（索引字段上使用!=、is null/is not null、还有or判断时，会导致索引失效而转向全表扫描）**
+
+索引列上用不等于：
+
+~~~mysql
+explain select * from staffs where name !='zhangsan';
+~~~
+
+![](/索引列上使用不等于运算符.jpg)
+
+索引列上用is not null：
+
+~~~mysql
+explain select * from staffs where name is not null;
+~~~
+
+![](/索引列上使用is_not_null.jpg)
+
+索引列上用or：
+
+~~~mysql
+explain select * from staffs where name ='zhangsan' or name='lisi';
+~~~
+
+![](/索引列上使用or.jpg)
+
+###### 小总结
+
+假设index(a,b,c)
+
+| Where语句                                               | 索引是否被使用                     |
+| ------------------------------------------------------- | ---------------------------------- |
+| where a = 3                                             | Y，使用到a                         |
+| where a = 3 and b = 5                                   | Y，使用到a，b                      |
+| where a = 3 and b = 5 and c = 4                         | Y，使用到a，b，c                   |
+| where b = 3 或者 where b = 3 and c = 4 或者 where c = 4 | N                                  |
+| where a = 3 and c = 4                                   | 使用到a，但是c不可以，b中间断了    |
+| where a = 3 and b > 5 and c = 4                         | 使用到a和b，c不能在范围之后，b断了 |
+| where a = 3 and b like 'kk%' and c = 4                  | Y，使用到a，b，c                   |
+| where a = 3 and b like '%kk' and c = 4                  | Y，只用到a                         |
+| where a = 3 and b like '%kk%' and c = 4                 | Y，只用到a                         |
+| where a = 3 and b like 'k%kk%' and c = 4                | Y，使用到a，b，c                   |
+
+**优化总结**
+
+全值匹配我最爱，最左前缀要遵守；
+
+带头大哥不能死，中间兄弟不能断；
+
+索引列上少计算，范围之后全失效；
+
+LIKE百分写最右，覆盖索引不写星；
+
+不等空值还有or，索引失效要少用；
+
+
 
